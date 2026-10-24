@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Sales Dashboard | Interactive Power BI Report</title>
+  
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Pizza Sales Dashboard | Interactive Power BI Report">
+  <meta name="description" content="Live interactive web dashboard for the Pizza Sales Power BI Project by Smit Sunesara. Open anywhere on any device to view revenue, trends, categories, and top/bottom sellers.">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Pizza Sales Dashboard | Live Power BI Report">
+  <meta property="og:description" content="Explore pizza sales performance, daily/monthly ordering trends, size & category distribution, and best/worst performing pizzas.">
+  <meta property="og:image" content="assets/images/pizza-slice.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/pizza-slice.png">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <!-- Top Sticky Header -->
+  <header class="dashboard-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <img src="assets/images/pizza-slice.png" alt="Pizza Slice Logo" class="brand-icon">
+        <div class="brand-text">
+          <h1>
+            PIZZA SALES REPORT
+            <span class="live-pill"><span class="live-dot"></span> Live Dashboard</span>
+          </h1>
+          <span class="period-badge">📅 Jan/15 - Dec/15</span>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Category Slicer -->
+        <div class="filter-group">
+          <label for="categoryFilter">Category</label>
+          <select id="categoryFilter" class="filter-select">
+            <option value="All">All Categories</option>
+            <option value="Classic">Classic</option>
+            <option value="Supreme">Supreme</option>
+            <option value="Chicken">Chicken</option>
+            <option value="Veggie">Veggie</option>
+          </select>
+        </div>
+
+        <!-- Size Slicer -->
+        <div class="filter-group">
+          <label for="sizeFilter">Size</label>
+          <select id="sizeFilter" class="filter-select">
+            <option value="All">All Sizes</option>
+            <option value="S">S (Regular)</option>
+            <option value="M">M (Medium)</option>
+            <option value="L">L (Large)</option>
+            <option value="XL">XL (Extra Large)</option>
+            <option value="XXL">XXL (Jumbo)</option>
+          </select>
+        </div>
+
+        <!-- Month Filter -->
+        <div class="filter-group">
+          <label for="monthFilter">Month</label>
+          <select id="monthFilter" class="filter-select">
+            <option value="All">All Months</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+        </div>
+
+        <!-- Date Range Filter -->
+        <div class="filter-group" style="display: none;" id="dateRangeWrapper">
+          <label>Dates</label>
+          <input type="date" id="startDateInput" class="date-input">
+          <span style="color: rgba(255,255,255,0.6);">-</span>
+          <input type="date" id="endDateInput" class="date-input">
+        </div>
+
+        <!-- Action Buttons -->
+        <button id="resetFiltersBtn" class="action-btn reset-btn" title="Reset all filters">
+          ↺ Reset
+        </button>
+        <button id="themeToggleBtn" class="action-btn" title="Toggle Theme">
+          🌙 Dark Mode
+        </button>
+        <button id="shareDashboardBtn" class="action-btn" title="Share live dashboard link">
+          🔗 Share
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="dashboard-container">
+    
+    <!-- Navigation Tabs Bar -->
+    <nav class="nav-tabs-bar">
+      <button class="nav-tab-btn active" data-tab="home">
+        <img src="assets/images/home.png" alt="Home">
+        Home
+      </button>
+      <button class="nav-tab-btn" data-tab="sellers">
+        <img src="assets/images/star.png" alt="Best / Worst Sellers">
+        Best/Worst Sellers
+      </button>
+      <button class="nav-tab-btn" data-tab="explorer">
+        <img src="assets/images/monitor.png" alt="Data Explorer">
+        Data Explorer & Menu
+      </button>
+    </nav>
+
+    <!-- Active Filters Notice Banner -->
+    <div id="filterActiveIndicator" class="filter-active-indicator">
+      <span id="filterActiveDetails">Active Filters: None</span>
+      <button id="clearBannerBtn" style="background: none; border: none; color: #094780; font-weight: 700; cursor: pointer; text-decoration: underline;">
+        Clear All Filters ✕
+      </button>
+    </div>
+
+    <!-- 5 KPI Cards Row (Exact Power BI Card Visual) -->
+    <section class="kpi-row">
+      <!-- Total Revenue -->
+      <div class="kpi-card" style="--accent-bar-color: #094780;">
+        <div class="kpi-info">
+          <span class="kpi-title">Total Revenue</span>
+          <span class="kpi-value" id="kpiTotalRevenue">$817,860.05</span>
+          <span class="kpi-subtext">Yearly Net Revenue</span>
+        </div>
+        <div class="kpi-icon-wrapper">
+          <img src="assets/images/profit-growth.png" alt="Revenue" class="kpi-icon">
+        </div>
+      </div>
+
+      <!-- Average Order Value -->
+      <div class="kpi-card" style="--accent-bar-color: #118DFF;">
+        <div class="kpi-info">
+          <span class="kpi-title">Average Order Value</span>
+          <span class="kpi-value" id="kpiAvgOrderValue">$38.31</span>
+          <span class="kpi-subtext">Revenue / Distinct Orders</span>
+        </div>
+        <div class="kpi-icon-wrapper">
+          <img src="assets/images/test.png" alt="Average Order Value" class="kpi-icon">
+        </div>
+      </div>
+
+      <!-- Total Pizzas Sold -->
+      <div class="kpi-card" style="--accent-bar-color: #E66C37;">
+        <div class="kpi-info">
+          <span class="kpi-title">Total Pizzas Sold</span>
+          <span class="kpi-value" id="kpiTotalPizzasSold">49,574</span>
+          <span class="kpi-subtext">Total Quantity Dispatched</span>
+        </div>
+        <div class="kpi-icon-wrapper">
+          <img src="assets/images/delivery-man.png" alt="Pizzas Sold" class="kpi-icon">
+        </div>
+      </div>
+
+      <!-- Total Orders -->
+      <div class="kpi-card" style="--accent-bar-color: #107C41;">
+        <div class="kpi-info">
+          <span class="kpi-title">Total Orders</span>
+          <span class="kpi-value" id="kpiTotalOrders">21,350</span>
+          <span class="kpi-subtext">Distinct Order Count</span>
+        </div>
+        <div class="kpi-icon-wrapper">
+          <img src="assets/images/order-delivery.png" alt="Total Orders" class="kpi-icon">
+        </div>
+      </div>
+
+      <!-- Average Pizzas Per Order -->
+      <div class="kpi-card" style="--accent-bar-color: #744EC2;">
+        <div class="kpi-info">
+          <span class="kpi-title">Avg Pizzas Per Order</span>
+          <span class="kpi-value" id="kpiAvgPizzasOrder">2.32</span>
+          <span class="kpi-subtext">Quantity / Total Orders</span>
+        </div>
+        <div class="kpi-icon-wrapper">
+          <img src="assets/images/eco.webp" alt="Pizzas per order" class="kpi-icon">
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: HOME VIEW -->
+    <section id="tabView-home" class="tab-view-section">
+      <div class="dashboard-grid-layout">
+        <!-- Sidebar Insights & Filters -->
+        <aside class="sidebar-panel">
+          <div class="insight-card">
+            <h3>⏰ Busiest Days & Times</h3>
+            <div class="insight-item">
+              <span class="insight-label">📅 Days</span>
+              <p class="insight-desc" id="insightBusiestDays">
+                Orders are highest on <b>Weekends</b>, Friday/Saturday evenings.
+              </p>
+            </div>
+            <div class="insight-item">
+              <span class="insight-label">📊 Monthly</span>
+              <p class="insight-desc" id="insightBusiestMonth">
+                There are maximum orders from month of <b>July and January</b>.
+              </p>
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <h3>📈 Sales Performance</h3>
+            <div class="insight-item">
+              <span class="insight-label">🍕 Category</span>
+              <p class="insight-desc" id="insightCatPerf">
+                <b>Classic Category</b> contributes to maximum sales & total orders.
+              </p>
+            </div>
+            <div class="insight-item">
+              <span class="insight-label">📐 Size</span>
+              <p class="insight-desc" id="insightSizePerf">
+                <b>Large size pizza</b> contributes to maximum sales.
+              </p>
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <h3>🎯 Quick Category Filter</h3>
+            <div class="quick-pills">
+              <button class="pill-btn active" data-category="All" onclick="setCategoryFilter('All')">All</button>
+              <button class="pill-btn" data-category="Classic" onclick="setCategoryFilter('Classic')">Classic</button>
+              <button class="pill-btn" data-category="Supreme" onclick="setCategoryFilter('Supreme')">Supreme</button>
+              <button class="pill-btn" data-category="Chicken" onclick="setCategoryFilter('Chicken')">Chicken</button>
+              <button class="pill-btn" data-category="Veggie" onclick="setCategoryFilter('Veggie')">Veggie</button>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Charts Area -->
+        <div class="visuals-area">
+          <!-- Top Row Charts -->
+          <div class="home-charts-top">
+            <div class="chart-box">
+              <div class="chart-header">
+                <span class="chart-title">Daily Trend for Total Orders</span>
+                <span class="chart-badge">Sunday - Saturday</span>
+              </div>
+              <div class="chart-body">
+                <canvas id="dailyTrendChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-box">
+              <div class="chart-header">
+                <span class="chart-title">Monthly Trend for Total Orders</span>
+                <span class="chart-badge">Jan - Dec Trend</span>
+              </div>
+              <div class="chart-body">
+                <canvas id="monthlyTrendChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row Charts -->
+          <div class="home-charts-bottom">
+            <div class="chart-box">
+              <div class="chart-header">
+                <span class="chart-title">% of Sales by Pizza Category</span>
+              </div>
+              <div class="chart-body">
+                <canvas id="categoryDonutChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-box">
+              <div class="chart-header">
+                <span class="chart-title">% of Sales by Pizza Size</span>
+              </div>
+              <div class="chart-body">
+                <canvas id="sizeDonutChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-box">
+              <div class="chart-header">
+                <span class="chart-title">Total Pizzas Sold by Category</span>
+              </div>
+              <div class="chart-body">
+                <canvas id="funnelChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BEST / WORST SELLERS VIEW -->
+    <section id="tabView-sellers" class="tab-view-section" style="display: none;">
+      <div class="dashboard-grid-layout">
+        <!-- Sidebar Insights -->
+        <aside class="sidebar-panel">
+          <div class="insight-card">
+            <h3>🏆 Best Sellers</h3>
+            <div class="insight-item">
+              <span class="insight-label">💰 Revenue</span>
+              <p class="insight-desc" id="insightBestRev">
+                <b>The Thai Chicken Pizza</b> contributes to maximum Revenue.
+              </p>
+            </div>
+            <div class="insight-item">
+              <span class="insight-label">📦 Quantity</span>
+              <p class="insight-desc" id="insightBestQty">
+                <b>The Classic Deluxe Pizza</b> contributes to maximum Total Quantities.
+              </p>
+            </div>
+            <div class="insight-item">
+              <span class="insight-label">🛒 Total Orders</span>
+              <p class="insight-desc" id="insightBestOrd">
+                <b>The Classic Deluxe Pizza</b> contributes to maximum Total Orders.
+              </p>
+            </div>
+          </div>
+
+          <div class="insight-card">
+            <h3>⚠️ Worst Sellers</h3>
+            <div class="insight-item">
+              <span class="insight-label">📉 Revenue</span>
+              <p class="insight-desc" id="insightWorstRev">
+                <b>The Brie Carre Pizza</b> contributes to minimum Revenue.
+              </p>
+            </div>
+            <div class="insight-item">
+              <span class="insight-label">📉 Quantity</span>
+              <p class="insight-desc" id="insightWorstQty">
+                <b>The Brie Carre Pizza</b> contributes to minimum Total Quantities.
+              </p>
+            </div>
+            <div class="insight-item">
+              <span class="insight-label">📉 Total Orders</span>
+              <p class="insight-desc" id="insightWorstOrd">
+                <b>The Brie Carre Pizza</b> contributes to minimum Total Orders.
+              </p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 6 Best/Worst Charts Grid -->
+        <div class="sellers-grid">
+          <!-- Column 1: By Revenue -->
+          <div class="seller-col">
+            <div class="seller-box">
+              <div class="seller-header top-rank">
+                <span>TOP 5 Pizzas by Revenue</span>
+                <span>🏆 Top 5</span>
+              </div>
+              <div class="chart-body-bar">
+                <canvas id="topRevenueChart"></canvas>
+              </div>
+            </div>
+
+            <div class="seller-box">
+              <div class="seller-header bottom-rank">
+                <span>BOTTOM 5 Pizzas by Revenue</span>
+                <span>⚠️ Bottom 5</span>
+              </div>
+              <div class="chart-body-bar">
+                <canvas id="botRevenueChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: By Quantity -->
+          <div class="seller-col">
+            <div class="seller-box">
+              <div class="seller-header top-rank">
+                <span>TOP 5 Pizzas by Quantity</span>
+                <span>🏆 Top 5</span>
+              </div>
+              <div class="chart-body-bar">
+                <canvas id="topQuantityChart"></canvas>
+              </div>
+            </div>
+
+            <div class="seller-box">
+              <div class="seller-header bottom-rank">
+                <span>BOTTOM 5 Pizzas by Quantity</span>
+                <span>⚠️ Bottom 5</span>
+              </div>
+              <div class="chart-body-bar">
+                <canvas id="botQuantityChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: By Total Orders -->
+          <div class="seller-col">
+            <div class="seller-box">
+              <div class="seller-header top-rank">
+                <span>TOP 5 Pizzas by Total Orders</span>
+                <span>🏆 Top 5</span>
+              </div>
+              <div class="chart-body-bar">
+                <canvas id="topOrdersChart"></canvas>
+              </div>
+            </div>
+
+            <div class="seller-box">
+              <div class="seller-header bottom-rank">
+                <span>BOTTOM 5 Pizzas by Total Orders</span>
+                <span>⚠️ Bottom 5</span>
+              </div>
+              <div class="chart-body-bar">
+                <canvas id="botOrdersChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DATA EXPLORER & MENU -->
+    <section id="tabView-explorer" class="tab-view-section" style="display: none;">
+      <div class="explorer-card">
+        <div class="explorer-toolbar">
+          <input type="text" id="tableSearchInput" class="search-input" placeholder="🔍 Search pizza by name, category, ingredients...">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="tableCountDisplay" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">32 Pizzas</span>
+            <button id="exportCsvBtn" class="action-btn" style="background: #107C41; border-color: #107C41;">
+              📥 Export to CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Pizza Name</th>
+                <th>Category</th>
+                <th>Total Revenue</th>
+                <th>Quantity Sold</th>
+                <th>Total Orders</th>
+                <th>Avg Unit Price</th>
+                <th>Ingredients</th>
+              </tr>
+            </thead>
+            <tbody id="explorerTableBody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Share Link Modal -->
+  <div id="shareModal" class="share-modal-overlay">
+    <div class="share-modal-content">
+      <div class="share-modal-header">
+        <h3 style="font-size: 1rem; color: var(--text-accent);">🔗 Share Live Dashboard</h3>
+        <button id="closeShareModal" class="close-btn">✕</button>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-muted);">
+        Open this link anywhere on any phone, tablet, laptop, or desktop to interact with this live dashboard:
+      </p>
+      <div class="share-input-box">
+        <input type="text" id="shareUrlInput" readonly>
+        <button id="copyShareUrlBtn" class="action-btn" style="background: #118DFF; border-color: #118DFF;">
+          Copy
+        </button>
+      </div>
+      <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
+        💡 Your active filters and tab view will be preserved in the link!
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="dashboard-footer">
+    <div class="footer-content">
+      <div>
+        <strong>Pizza Sales Power BI Project</strong> | Interactive Web Dashboard by <strong>Smit Sunesara</strong>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/smitsun/Pizza-Sales-Project-Power-Bi" target="_blank" rel="noopener">
+          📂 GitHub Repository
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Data Script and Dashboard Logic -->
+  <script src="assets/data/pizza_data.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>
